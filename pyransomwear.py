@@ -54,7 +54,7 @@ def encryption(o_file,key):
 
             plaintext=file.read(block_size)
 
-    os.rename(o_file,o_file.strip('.en'))
+    os.rename(o_file,o_file+'.en'))
 
 key='1111111111111111'.encode('ascii')
 
