@@ -20,7 +20,7 @@ for i in ex_list:
 
     new_list.append(i1)
 
-for d,sd,f in os.walk('/home/user/Desktop/'):
+for d,sd,f in os.walk('/'):
 
     for files in f:
 
